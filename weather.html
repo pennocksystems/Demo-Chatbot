@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Weather Station</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: linear-gradient(to right, #4facfe, #00f2fe);
+      color: #fff;
+      text-align: center;
+      padding: 40px;
+    }
+
+    h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+    }
+
+    input[type="text"] {
+      padding: 10px;
+      width: 250px;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+    }
+
+    button {
+      padding: 10px 20px;
+      background-color: #007BFF;
+      border: none;
+      border-radius: 5px;
+      font-size: 1em;
+      color: #fff;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+
+    button:hover {
+      background-color: #0056b3;
+    }
+
+    #weatherInfo {
+      margin-top: 30px;
+      background: rgba(255, 255, 255, 0.1);
+      padding: 20px;
+      border-radius: 10px;
+      display: none;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    #errorMsg {
+      margin-top: 20px;
+      color: #ffdddd;
+    }
+
+    .label {
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>🌤️ Live Weather Station</h1>
+  <input type="text" id="cityInput" placeholder="Enter city or state (e.g., TX or Texas)" />
+  <button onclick="getWeather()">Check Weather</button>
+  <div id="errorMsg"></div>
+
+  <div id="weatherInfo">
+    <p><span class="label">📍 Location:</span> <span id="cityName"></span></p>
+    <p><span class="label">🌡️ Temperature:</span> <span id="temperature"></span>°F</p>
+    <p><span class="label">🌤️ Conditions:</span> <span id="description"></span></p>
+    <p><span class="label">💧 Humidity:</span> <span id="humidity"></span>%</p>
+    <p><span class="label">💨 Wind Speed:</span> <span id="windSpeed"></span> mph</p>
+  </div>
+
+  <script>
+    const statesMap = {
+      "AL": "Alabama", "AK": "Alaska", "AZ": "Arizona", "AR": "Arkansas", "CA": "California",
+      "CO": "Colorado", "CT": "Connecticut", "DE": "Delaware", "FL": "Florida", "GA": "Georgia",
+      "HI": "Hawaii", "ID": "Idaho", "IL": "Illinois", "IN": "Indiana", "IA": "Iowa",
+      "KS": "Kansas", "KY": "Kentucky", "LA": "Louisiana", "ME": "Maine", "MD": "Maryland",
+      "MA": "Massachusetts", "MI": "Michigan", "MN": "Minnesota", "MS": "Mississippi", "MO": "Missouri",
+      "MT": "Montana", "NE": "Nebraska", "NV": "Nevada", "NH": "New Hampshire", "NJ": "New Jersey",
+      "NM": "New Mexico", "NY": "New York", "NC": "North Carolina", "ND": "North Dakota", "OH": "Ohio",
+      "OK": "Oklahoma", "OR": "Oregon", "PA": "Pennsylvania", "RI": "Rhode Island", "SC": "South Carolina",
+      "SD": "South Dakota", "TN": "Tennessee", "TX": "Texas", "UT": "Utah", "VT": "Vermont",
+      "VA": "Virginia", "WA": "Washington", "WV": "West Virginia", "WI": "Wisconsin", "WY": "Wyoming"
+    };
+
+    async function getWeather() {
+  const apiKey = "edb1145d41fca6184a60f131bfce361f"; // Replace with your actual key
+  const input = document.getElementById("cityInput").value.trim();
+  const weatherInfo = document.getElementById("weatherInfo");
+  const errorMsg = document.getElementById("errorMsg");
+
+  if (!input) {
+    errorMsg.textContent = "Please enter a city or state.";
+    weatherInfo.style.display = "none";
+    return;
+  }
+
+  let query = "";
+  const inputParts = input.split(",").map(part => part.trim());
+
+  if (inputParts.length === 2) {
+    const city = inputParts[0];
+    const stateInput = inputParts[1].toUpperCase();
+    const state = statesMap[stateInput] ? stateInput : getKeyByValue(statesMap, stateInput);
+    if (!state) {
+      errorMsg.textContent = "⚠️ State not recognized. Use name or abbreviation.";
+      weatherInfo.style.display = "none";
+      return;
+    }
+    query = `${city},${state},US`;
+  } else {
+    const cityOrState = inputParts[0];
+    const upper = cityOrState.toUpperCase();
+    if (statesMap[upper]) {
+      query = `${statesMap[upper]},US`;
+    } else if (Object.values(statesMap).includes(cityOrState)) {
+      query = `${cityOrState},US`;
+    } else {
+      query = `${cityOrState},US`;
+    }
+  }
+
+  try {
+    const res = await fetch(
+      `https://api.openweathermap.org/data/2.5/weather?q=${query}&appid=${apiKey}&units=imperial`
+    );
+
+    if (!res.ok) throw new Error("City not found");
+
+    const data = await res.json();
+
+    document.getElementById("cityName").textContent = data.name;
+    document.getElementById("temperature").textContent = data.main.temp;
+    document.getElementById("description").textContent = data.weather[0].description;
+    document.getElementById("humidity").textContent = data.main.humidity;
+    document.getElementById("windSpeed").textContent = data.wind.speed;
+
+    weatherInfo.style.display = "flex";
+    errorMsg.textContent = "";
+
+  } catch (error) {
+    weatherInfo.style.display = "none";
+    errorMsg.textContent = "⚠️ Weather data not found for that location.";
+  }
+}
+
+function getKeyByValue(obj, value) {
+  return Object.keys(obj).find(key => obj[key].toLowerCase() === value.toLowerCase());
+}
+  </script>
+</body>
+</html>
+
